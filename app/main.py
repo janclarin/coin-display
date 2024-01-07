@@ -24,7 +24,7 @@ PERCENT_DECIMALS = 2
 
 COINGECKO_CSV_IDS=os.environ.get("COINGECKO_CSV_IDS")
 COINGECKO_DEMO_API_KEY=os.environ.get("COINGECKO_DEMO_API_KEY")
-REFRESH_INTERVAL_MINS=os.environ.get("REFRESH_INTERVAL_MINS")
+REFRESH_INTERVAL_MINS=int(os.environ.get("REFRESH_INTERVAL_MINS"))
 
 epd = epd2in7_V2.EPD()
 current_dir = os.getcwd()
@@ -41,9 +41,7 @@ def load_coins():
     except Exception as e:
         logging.error(e.message)
 
-def display_coins():
-    coins = load_coins()
-
+def display_coins(coins):
     epd.init_Fast()
     image = Image.new("1", (epd.height, epd.width), 255)
     draw = ImageDraw.Draw(image)
@@ -53,12 +51,17 @@ def display_coins():
         price = coin["current_price"]
         percent_change_24hr = round(coin["price_change_percentage_24h_in_currency"], PERCENT_DECIMALS)
         draw.text((PADDING, current_y), coin["name"], font=font16)
-        draw.text((100 + PADDING, current_y), f"${price}", font=font16)
+        draw.text((88 + PADDING, current_y), f"${price}", font=font16)
         draw.text((200 + PADDING, current_y), f"{percent_change_24hr}%", font=font16)
         current_y += 16 + PADDING * 3
 
     epd.display_Fast(epd.getbuffer(image))
 
+def check_coins():
+    while True:
+        coins = load_coins()
+        display_coins(coins)
+        time.sleep(REFRESH_INTERVAL_MINS * 60)
 
 def clear_screen():
     epd.init()
@@ -102,7 +105,7 @@ def button_check():
 def main():
     clear_screen()
 
-    update_thread = threading.Thread(target=display_coins)
+    update_thread = threading.Thread(target=check_coins)
     update_thread.start()
 
     try:
