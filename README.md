@@ -8,6 +8,11 @@ Based on [Spotipy Display](https://github.com/jedclarin/spotipy-display).
 - Displays configured cryptocurrency prices for configured coins
 - Bottom (KEY4) button triggers price refresh
 
+## Hardware
+- Raspberry Pi 4
+- Raspberry Pi OS Lite 64-bit
+- [Waveshare 2.7" e-Paper Display GPIO HAT](https://www.amazon.com/2-7inch-HAT-Resolution-Electronic-Communicating/dp/B075FQKSZ9/ref=sr_1_2?crid=3QTGQC71HK2NP&keywords=waveshare+2.7&qid=1704703657&sprefix=waveshare+2.7%2Caps%2C161&sr=8-2)
+
 ## Setup
 
 ### Get CoinGecko API key
