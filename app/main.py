@@ -18,11 +18,13 @@ KEY_1 = 5
 KEY_2 = 6
 KEY_3 = 13
 KEY_4 = 19
+FONT_SIZE = 14
 PADDING = 4
-PERCENT_DECIMALS = 2
-MAX_X = 255
-PRICE_START_X = 64
-PERCENT_START_X = 180
+PERCENT_DECIMALS = 1
+MAX_X = 260
+PRICE_START_X = 60
+PERCENT_1H_START_X = 148
+PERCENT_24H_START_X = 208
 
 COINGECKO_CSV_IDS = os.environ.get("COINGECKO_CSV_IDS")
 COINGECKO_DEMO_API_KEY = os.environ.get("COINGECKO_DEMO_API_KEY")
@@ -32,13 +34,13 @@ epd = epd2in7_V2.EPD()
 current_dir = os.getcwd()
 asset_dir = os.path.join(current_dir, "assets")
 font_path = os.path.join(asset_dir, "Font.ttc")
-font16 = ImageFont.truetype(font_path, 16)
+font = ImageFont.truetype(font_path, FONT_SIZE)
 
 
 def load_coins():
     try:
         response = requests.get(
-            f"https://api.coingecko.com/api/v3/coins/markets?x_cg_demo_api_key={COINGECKO_DEMO_API_KEY}&vs_currency=usd&price_change_percentage=24h,7d,30d&ids={COINGECKO_CSV_IDS}"
+            f"https://api.coingecko.com/api/v3/coins/markets?x_cg_demo_api_key={COINGECKO_DEMO_API_KEY}&vs_currency=usd&price_change_percentage=1h,24h,7d,30d&ids={COINGECKO_CSV_IDS}"
         )
         return response.json()
     except Exception as e:
@@ -51,24 +53,31 @@ def round_sig_figures(num):
 
 
 def display_headers(draw):
-    draw.text((PADDING, PADDING), "COIN", font=font16)
-    draw.text((PRICE_START_X + PADDING * 2, PADDING), "PRICE", font=font16)
-    draw.text((PERCENT_START_X + PADDING * 2, PADDING), "% (24H)", font=font16)
+    draw.text((PADDING, PADDING), "COIN", font=font)
+    draw.text((PRICE_START_X + PADDING * 2, PADDING), "PRICE", font=font)
+    draw.text((PERCENT_1H_START_X + PADDING * 2, PADDING), "1H", font=font)
+    draw.text((PERCENT_24H_START_X + PADDING * 2, PADDING), "24H", font=font)
 
-    header_line_y = 16 + PADDING * 2
+    header_line_y = 14 + PADDING * 2
     draw.line((PADDING, header_line_y, MAX_X, header_line_y), fill=0)
 
 
 def display_coin(coin, draw, y):
     ticker = str(coin["symbol"]).upper()
     price = round_sig_figures(coin["current_price"])
+    percent_change_1hr = round(
+        coin["price_change_percentage_1h_in_currency"], PERCENT_DECIMALS
+    )
     percent_change_24hr = round(
         coin["price_change_percentage_24h_in_currency"], PERCENT_DECIMALS
     )
-    draw.text((PADDING, y), ticker, font=font16)
-    draw.text((PRICE_START_X + PADDING * 2, y), f"${price}", font=font16)
+    draw.text((PADDING, y), ticker, font=font)
+    draw.text((PRICE_START_X + PADDING * 2, y), f"${price}", font=font)
     draw.text(
-        (PERCENT_START_X + PADDING * 2, y), f"{percent_change_24hr}%", font=font16
+        (PERCENT_1H_START_X + PADDING * 2, y), f"{percent_change_1hr}%", font=font
+    )
+    draw.text(
+        (PERCENT_24H_START_X + PADDING * 2, y), f"{percent_change_24hr}%", font=font
     )
 
 
@@ -78,12 +87,13 @@ def display_coins(coins):
     draw = ImageDraw.Draw(image)
 
     draw.line((PRICE_START_X, 0, PRICE_START_X, MAX_X), fill=0)
-    draw.line((PERCENT_START_X, 0, PERCENT_START_X, MAX_X), fill=0)
+    draw.line((PERCENT_1H_START_X, 0, PERCENT_1H_START_X, MAX_X), fill=0)
+    draw.line((PERCENT_24H_START_X, 0, PERCENT_24H_START_X, MAX_X), fill=0)
     display_headers(draw)
-    current_y = 16 + PADDING * 4
+    current_y = 14 + PADDING * 4
     for coin in coins:
         display_coin(coin, draw, current_y)
-        current_y += 16 + PADDING * 2
+        current_y += 14 + PADDING * 2
 
     epd.display_Fast(epd.getbuffer(image))
 
