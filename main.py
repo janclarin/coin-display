@@ -48,7 +48,12 @@ def load_coins():
 
 
 def round_sig_figures(num):
-    price = float(f"{num:.6g}")
+    if num > 1000:
+        return f"{num}"
+    elif num > 10:
+        return f"{num:.2f}"
+
+    price = float(f"{num:.3g}")
     return f"{price:g}"
 
 
