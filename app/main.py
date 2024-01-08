@@ -1,5 +1,4 @@
 import os
-from email import message
 from PIL import Image, ImageDraw, ImageFont
 import os
 import logging
@@ -21,16 +20,20 @@ KEY_3 = 13
 KEY_4 = 19
 PADDING = 4
 PERCENT_DECIMALS = 2
+MAX_X = 255
+PRICE_START_X = 64
+PERCENT_START_X = 180
 
-COINGECKO_CSV_IDS=os.environ.get("COINGECKO_CSV_IDS")
-COINGECKO_DEMO_API_KEY=os.environ.get("COINGECKO_DEMO_API_KEY")
-REFRESH_INTERVAL_MINS=int(os.environ.get("REFRESH_INTERVAL_MINS"))
+COINGECKO_CSV_IDS = os.environ.get("COINGECKO_CSV_IDS")
+COINGECKO_DEMO_API_KEY = os.environ.get("COINGECKO_DEMO_API_KEY")
+REFRESH_INTERVAL_MINS = int(os.environ.get("REFRESH_INTERVAL_MINS"))
 
 epd = epd2in7_V2.EPD()
 current_dir = os.getcwd()
-asset_dir = os.path.join(current_dir, 'assets')
-font_path = os.path.join(asset_dir, 'Font.ttc')
+asset_dir = os.path.join(current_dir, "assets")
+font_path = os.path.join(asset_dir, "Font.ttc")
 font16 = ImageFont.truetype(font_path, 16)
+
 
 def load_coins():
     try:
@@ -41,27 +44,60 @@ def load_coins():
     except Exception as e:
         logging.error(e.message)
 
+
+def round_sig_figures(num):
+    price = float(f"{num:.6g}")
+    return f"{price:g}"
+
+
+def display_headers(draw):
+    draw.text((PADDING, PADDING), "COIN", font=font16)
+    draw.text((PRICE_START_X + PADDING * 2, PADDING), "PRICE", font=font16)
+    draw.text((PERCENT_START_X + PADDING * 2, PADDING), "% (24H)", font=font16)
+
+    header_line_y = 16 + PADDING * 2
+    draw.line((PADDING, header_line_y, MAX_X, header_line_y), fill=0)
+
+
+def display_coin(coin, draw, y):
+    ticker = str(coin["symbol"]).upper()
+    price = round_sig_figures(coin["current_price"])
+    percent_change_24hr = round(
+        coin["price_change_percentage_24h_in_currency"], PERCENT_DECIMALS
+    )
+    draw.text((PADDING, y), ticker, font=font16)
+    draw.text((PRICE_START_X + PADDING * 2, y), f"${price}", font=font16)
+    draw.text(
+        (PERCENT_START_X + PADDING * 2, y), f"{percent_change_24hr}%", font=font16
+    )
+
+
 def display_coins(coins):
     epd.init_Fast()
-    image = Image.new("1", (epd.height, epd.width), 255)
+    image = Image.new("1", (epd.height, epd.width), MAX_X)
     draw = ImageDraw.Draw(image)
 
-    current_y = PADDING
+    draw.line((PRICE_START_X, 0, PRICE_START_X, MAX_X), fill=0)
+    draw.line((PERCENT_START_X, 0, PERCENT_START_X, MAX_X), fill=0)
+    display_headers(draw)
+    current_y = 16 + PADDING * 4
     for coin in coins:
-        price = coin["current_price"]
-        percent_change_24hr = round(coin["price_change_percentage_24h_in_currency"], PERCENT_DECIMALS)
-        draw.text((PADDING, current_y), coin["name"], font=font16)
-        draw.text((88 + PADDING, current_y), f"${price}", font=font16)
-        draw.text((200 + PADDING, current_y), f"{percent_change_24hr}%", font=font16)
-        current_y += 16 + PADDING * 3
+        display_coin(coin, draw, current_y)
+        current_y += 16 + PADDING * 2
 
     epd.display_Fast(epd.getbuffer(image))
 
+
+def refresh_coins():
+    coins = load_coins()
+    display_coins(coins)
+
+
 def check_coins():
     while True:
-        coins = load_coins()
-        display_coins(coins)
+        refresh_coins()
         time.sleep(REFRESH_INTERVAL_MINS * 60)
+
 
 def clear_screen():
     epd.init()
@@ -79,8 +115,6 @@ def button_check():
 
     while True:
         time.sleep(0.05)
-        # Returns the value read at the given pin. It will be HIGH or LOW (0 or 1).
-
         if GPIO.input(KEY_1) == 0:
             logging.info("Key 1")
             while GPIO.input(KEY_1) == 0:
@@ -97,7 +131,7 @@ def button_check():
                 time.sleep(0.01)
 
         elif GPIO.input(KEY_4) == 0:
-            logging.info("Key 4")
+            refresh_coins()
             while GPIO.input(KEY_4) == 0:
                 time.sleep(0.01)
 
