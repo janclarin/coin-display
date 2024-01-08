@@ -33,7 +33,8 @@ Turn on SPI after attaching e-paper display to Pi via GPIO.
     - `COINGECKO_CSV_IDS`: comma-separated string of CoinGecko API IDs found on a coin's page
     - `COINGECKO_DEMO_API_KEY`: API key from CoinGecko developer dashboard
     - `REFRESH_INTERVAL_MINS`: time interval in minutes between automatically refreshing prices
-    - `PERCENT_TIME_COLUMN_[1|2|3]`: the time window price percent change change, `1h, 24h, 7d, 14d, 30d, 200d, 1y` 
+    - `PERCENT_TIME_COLUMN_[1|2|3]`: time window price percent change change per column
+        - Supported values: `1h, 24h, 7d, 14d, 30d, 200d, 1y` 
 2. Set up virtual environment: `python3 -m venv venv`
 3. Activate virtualenv: `source venv/bin/activate`
 4. Install dependencies: `pip3 install lgpio gpiozero numpy Pillow requests RPi.GPIO spidev`
