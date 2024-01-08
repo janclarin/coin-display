@@ -2,7 +2,7 @@
 Displays prices of configured cryptocurrencys sourced from CoinGecko.
 Based on [Spotipy Display](https://github.com/jedclarin/spotipy-display).
 
-![Coin Display](https://github.com/janclarin/coin-display/assets/2449384/4e18acfd-b715-42f4-b8b0-9d802b7fda5a)
+![coin-display](https://github.com/janclarin/coin-display/assets/2449384/277d0103-f1dc-4639-9d7a-f1567b65f292)
 
 ## Features
 - Displays configured cryptocurrency prices for configured coins
