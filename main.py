@@ -63,7 +63,7 @@ def display_headers(draw):
     draw.text((PERCENT_1H_START_X + PADDING * 2, PADDING), "1H", font=font)
     draw.text((PERCENT_24H_START_X + PADDING * 2, PADDING), "24H", font=font)
 
-    header_line_y = 14 + PADDING * 2
+    header_line_y = FONT_SIZE + PADDING * 2
     draw.line((PADDING, header_line_y, MAX_X, header_line_y), fill=0)
 
 
@@ -95,10 +95,10 @@ def display_coins(coins):
     draw.line((PERCENT_1H_START_X, 0, PERCENT_1H_START_X, MAX_X), fill=0)
     draw.line((PERCENT_24H_START_X, 0, PERCENT_24H_START_X, MAX_X), fill=0)
     display_headers(draw)
-    current_y = 14 + PADDING * 4
+    current_y = FONT_SIZE + PADDING * 4
     for coin in coins:
         display_coin(coin, draw, current_y)
-        current_y += 14 + PADDING * 2
+        current_y += FONT_SIZE + PADDING * 2
 
     epd.display_Fast(epd.getbuffer(image))
 
