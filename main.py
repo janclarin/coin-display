@@ -1,4 +1,5 @@
 import os
+from xml.dom.minidom import NamedNodeMap
 from PIL import Image, ImageDraw, ImageFont
 import os
 import logging
@@ -18,17 +19,20 @@ KEY_1 = 5
 KEY_2 = 6
 KEY_3 = 13
 KEY_4 = 19
-FONT_SIZE = 14
+FONT_SIZE = 12
 PADDING = 4
-PERCENT_DECIMALS = 1
 MAX_X = 260
 PRICE_START_X = 60
-PERCENT_1H_START_X = 148
-PERCENT_24H_START_X = 208
+PERCENT_1_START_X = 130
+PERCENT_2_START_X = 174
+PERCENT_3_START_X = 218
 
 COINGECKO_CSV_IDS = os.environ.get("COINGECKO_CSV_IDS")
 COINGECKO_DEMO_API_KEY = os.environ.get("COINGECKO_DEMO_API_KEY")
 REFRESH_INTERVAL_MINS = int(os.environ.get("REFRESH_INTERVAL_MINS"))
+PERCENT_TIME_COLUMN_1 = os.environ.get("PERCENT_TIME_COLUMN_1")
+PERCENT_TIME_COLUMN_2 = os.environ.get("PERCENT_TIME_COLUMN_2")
+PERCENT_TIME_COLUMN_3 = os.environ.get("PERCENT_TIME_COLUMN_3")
 
 epd = epd2in7_V2.EPD()
 current_dir = os.getcwd()
@@ -39,12 +43,13 @@ font = ImageFont.truetype(font_path, FONT_SIZE)
 
 def load_coins():
     try:
+        percentages = ",".join([PERCENT_TIME_COLUMN_1, PERCENT_TIME_COLUMN_2, PERCENT_TIME_COLUMN_3])
         response = requests.get(
-            f"https://api.coingecko.com/api/v3/coins/markets?x_cg_demo_api_key={COINGECKO_DEMO_API_KEY}&vs_currency=usd&price_change_percentage=1h,24h,7d,30d&ids={COINGECKO_CSV_IDS}"
+            f"https://api.coingecko.com/api/v3/coins/markets?x_cg_demo_api_key={COINGECKO_DEMO_API_KEY}&vs_currency=usd&price_change_percentage={percentages}&ids={COINGECKO_CSV_IDS}"
         )
         return response.json()
     except Exception as e:
-        logging.error(e.message)
+        logging.error(e)
 
 
 def round_sig_figures(num):
@@ -57,33 +62,49 @@ def round_sig_figures(num):
     return f"{price:g}"
 
 
+def get_percent_change(coin, time_range):
+    percent = coin[f"price_change_percentage_{time_range}_in_currency"]
+    if percent is None:
+        return "---"
+
+    return f"{round(percent)}%"
+
+
 def display_headers(draw):
     draw.text((PADDING, PADDING), "COIN", font=font)
     draw.text((PRICE_START_X + PADDING * 2, PADDING), "PRICE", font=font)
-    draw.text((PERCENT_1H_START_X + PADDING * 2, PADDING), "1H", font=font)
-    draw.text((PERCENT_24H_START_X + PADDING * 2, PADDING), "24H", font=font)
+    draw.text(
+        (PERCENT_1_START_X + PADDING * 2, PADDING),
+        PERCENT_TIME_COLUMN_1.upper(),
+        font=font,
+    )
+    draw.text(
+        (PERCENT_2_START_X + PADDING * 2, PADDING),
+        PERCENT_TIME_COLUMN_2.upper(),
+        font=font,
+    )
+    draw.text(
+        (PERCENT_3_START_X + PADDING * 2, PADDING),
+        PERCENT_TIME_COLUMN_3.upper(),
+        font=font,
+    )
 
     header_line_y = FONT_SIZE + PADDING * 2
     draw.line((PADDING, header_line_y, MAX_X, header_line_y), fill=0)
 
 
 def display_coin(coin, draw, y):
+    logging.info(coin)
     ticker = str(coin["symbol"]).upper()
     price = round_sig_figures(coin["current_price"])
-    percent_change_1hr = round(
-        coin["price_change_percentage_1h_in_currency"], PERCENT_DECIMALS
-    )
-    percent_change_24hr = round(
-        coin["price_change_percentage_24h_in_currency"], PERCENT_DECIMALS
-    )
+    percent_change_1 = get_percent_change(coin, PERCENT_TIME_COLUMN_1)
+    percent_change_2 = get_percent_change(coin, PERCENT_TIME_COLUMN_2)
+    percent_change_3 = get_percent_change(coin, PERCENT_TIME_COLUMN_3)
     draw.text((PADDING, y), ticker, font=font)
     draw.text((PRICE_START_X + PADDING * 2, y), f"${price}", font=font)
-    draw.text(
-        (PERCENT_1H_START_X + PADDING * 2, y), f"{percent_change_1hr}%", font=font
-    )
-    draw.text(
-        (PERCENT_24H_START_X + PADDING * 2, y), f"{percent_change_24hr}%", font=font
-    )
+    draw.text((PERCENT_1_START_X + PADDING * 2, y), percent_change_1, font=font)
+    draw.text((PERCENT_2_START_X + PADDING * 2, y), percent_change_2, font=font)
+    draw.text((PERCENT_3_START_X + PADDING * 2, y), percent_change_3, font=font)
 
 
 def display_coins(coins):
@@ -91,10 +112,13 @@ def display_coins(coins):
     image = Image.new("1", (epd.height, epd.width), MAX_X)
     draw = ImageDraw.Draw(image)
 
-    draw.line((PRICE_START_X, 0, PRICE_START_X, MAX_X), fill=0)
-    draw.line((PERCENT_1H_START_X, 0, PERCENT_1H_START_X, MAX_X), fill=0)
-    draw.line((PERCENT_24H_START_X, 0, PERCENT_24H_START_X, MAX_X), fill=0)
     display_headers(draw)
+
+    draw.line((PRICE_START_X, 0, PRICE_START_X, MAX_X), fill=0)
+    draw.line((PERCENT_1_START_X, 0, PERCENT_1_START_X, MAX_X), fill=0)
+    draw.line((PERCENT_2_START_X, 0, PERCENT_2_START_X, MAX_X), fill=0)
+    draw.line((PERCENT_3_START_X, 0, PERCENT_3_START_X, MAX_X), fill=0)
+
     current_y = FONT_SIZE + PADDING * 4
     for coin in coins:
         display_coin(coin, draw, current_y)
